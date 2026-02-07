@@ -84,11 +84,7 @@ export default function ThemeToggle() {
 
   return (
     <Button onClick={toggleTheme} aria-label="切换主题">
-      {isDark ? (
-        <Sun className="h-5 w-5 text-yellow-400" />
-      ) : (
-        <Moon className="h-5 w-5 text-slate-700" />
-      )}
+      {isDark ? "黑色模式" : "白色模式"}
     </Button>
   );
 }
