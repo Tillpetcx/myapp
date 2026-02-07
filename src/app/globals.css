@@ -1,26 +1,122 @@
+/* app/globals.css 或 src/styles/globals.css */
+
+/* 1. 必须先导入 Tailwind v4 核心 */
 @import "tailwindcss";
 
+/* 2. 关键：让 dark: 前缀基于 .dark 类（手动切换）而不是系统偏好 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* 可选：如果用了 tailwindcss-animate 或 tw-animate-css，导入它（shadcn 很多组件依赖动画） */
+/* @import "tw-animate-css";   ← 如果你 npm i tw-animate-css 了，就加这一行 */
+
+/* 3. 定义实际的 semantic CSS 变量（推荐无前缀，放在 :root / .dark） */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 基础 */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(222.2 47.4% 11.2%);
+
+  /* 主色 */
+  --primary: hsl(218, 72%, 43%);
+  --primary-foreground: hsl(210 40% 98%);
+
+  /* 次级 */
+  --secondary: hsl(210 40% 96.1%);
+  --secondary-foreground: hsl(222.2 47.4% 11.2%);
+
+  /* 强调 / 选中态 */
+  --accent: hsl(210 40% 96.1%);
+  --accent-foreground: hsl(222.2 47.4% 11.2%);
+
+  /* 危险 */
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(210 40% 98%);
+
+  /* UI 基础 */
+  --border: hsl(214.3 31.8% 91.4%);
+  --input: hsl(214.3 31.8% 91.4%);
+  --ring: hsl(215 20.2% 65.1%);
+
+  /* 圆角（shadcn 常用） */
+  --radius: 0.5rem;
+
+  /* 常见缺失变量（如果用了 Card、Popover、Muted 等组件，强烈建议加上） */
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(222.2 47.4% 11.2%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(222.2 47.4% 11.2%);
+  --muted: hsl(210 40% 96.1%);
+  --muted-foreground: hsl(215.4 16.3% 46.9%);
 }
 
+/* Dark mode 覆盖（只改需要翻转的 token） */
+.dark {
+  --background: hsl(222.2 47.4% 11.2%);
+  --foreground: hsl(210 40% 98%);
+
+  --primary: hsl(210 40% 98%);
+  --primary-foreground: hsl(222.2 47.4% 11.2%);
+
+  --secondary: hsl(217.2 32.6% 17.5%);
+  --secondary-foreground: hsl(210 40% 98%);
+
+  --accent: hsl(217.2 32.6% 17.5%);
+  --accent-foreground: hsl(210 40% 98%);
+
+  --destructive: hsl(0 62.8% 30.6%);
+  --destructive-foreground: hsl(210 40% 98%);
+
+  --border: hsl(217.2 32.6% 17.5%);
+  --input: hsl(217.2 32.6% 17.5%);
+  --ring: hsl(216 34% 17%);
+
+  --card: hsl(222.2 47.4% 11.2%);
+  --card-foreground: hsl(210 40% 98%);
+  --popover: hsl(222.2 47.4% 11.2%);
+  --popover-foreground: hsl(210 40% 98%);
+  --muted: hsl(217.2 32.6% 17.5%);
+  --muted-foreground: hsl(215 20.2% 65.1%);
+}
+
+/* 4. 关键映射：让 Tailwind v4 生成 bg-primary、text-primary-foreground 等类 */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  /* 圆角也映射（shadcn Button、Card 等常用） */
+  --radius: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* 5. 基础层：全局重置 + 绑定变量 */
+@layer base {
+  * {
+    @apply border-border;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
