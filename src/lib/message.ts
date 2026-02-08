@@ -1,0 +1,1 @@
+export const E_005 = "Invalid request";
