@@ -1,9 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getAllUsers } from '@/app/services/backend/user-service';
+import { createUser, getAllUsers, getUserByEmail, getUserByUsername } from '@/app/services/backend/user-service';
 
-// 获取所有用户
-export async function GET() {
+// 获取所有用户或根据邮箱/用户名查询用户
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get('email');
+    const username = searchParams.get('username');
+    
+    // 如果提供了邮箱参数，返回该邮箱的用户
+    if (email) {
+      const user = await getUserByEmail(email);
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(user);
+    }
+    
+    // 如果提供了用户名参数，返回该用户名的用户
+    if (username) {
+      const user = await getUserByUsername(username);
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json(user);
+    }
+    
+    // 否则返回所有用户
     const users = await getAllUsers();
     return NextResponse.json(users);
   } catch (error) {

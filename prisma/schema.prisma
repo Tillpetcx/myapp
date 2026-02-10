@@ -14,40 +14,32 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  username   String?  @unique
+  id         String    @id @default(cuid())
+  email      String    @unique
+  username   String?   @unique
   password   String
   firstName  String?
   lastName   String?
   avatar     String?
   bio        String?
   phone      String?
-  isActive   Boolean  @default(true)
-  isVerified Boolean  @default(false)
-  role       UserRole @default(USER)
-
-  // 逻辑删除字段
-  isDeleted Boolean   @default(false)
-  deletedAt DateTime?
-
-  // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  posts    Post[]
-  profiles Profile[]
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false)
+  role       UserRole  @default(USER)
+  isDeleted  Boolean   @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  posts      Post[]
+  profiles   Profile[]
 
   @@map("users")
 }
 
 model Profile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Additional profile fields
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   website   String?
   location  String?
   birthDate DateTime?

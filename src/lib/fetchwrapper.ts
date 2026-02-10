@@ -194,6 +194,11 @@ const coreRequest = async <T = any>(
   // 处理URL参数
   const finalUrl = buildURL(fullUrl, config.params);
   
+  // 确保URL是有效的
+  const requestUrl = finalUrl.startsWith('/') 
+    ? (typeof window !== 'undefined' ? `${window.location.origin}${finalUrl}` : `http://localhost:3000${finalUrl}`)
+    : finalUrl;
+  
   // 处理请求头
   let headers = { ...DEFAULT_CONFIG.headers, ...config.headers };
   if (!config.skipAuthHeader) {
@@ -226,14 +231,14 @@ const coreRequest = async <T = any>(
       // 带超时的请求
       if (config.retries && config.retries > 0) {
         // 带超时和重试的请求
-        response = await fetchWithRetry(finalUrl, requestOptions, config.retries, config.retryDelay!);
+        response = await fetchWithRetry(requestUrl, requestOptions, config.retries, config.retryDelay!);
       } else {
         // 仅带超时的请求
-        response = await fetchWithTimeout(finalUrl, requestOptions, config.timeout);
+        response = await fetchWithTimeout(requestUrl, requestOptions, config.timeout);
       }
     } else {
       // 普通请求
-      response = await fetch(finalUrl, requestOptions);
+      response = await fetch(requestUrl, requestOptions);
     }
     
     // 处理响应

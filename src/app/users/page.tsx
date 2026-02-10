@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import {
   useReactTable,
@@ -493,7 +492,7 @@ export default function UsersPage() {
         </div>
       ) : (
         <>
-          <div className="w-full">
+          {/* <div className="w-full">
             <UserFilters
               globalFilter={globalFilter}
               setGlobalFilter={setGlobalFilter}
@@ -523,7 +522,7 @@ export default function UsersPage() {
                 />
               </div>
             </div>
-          </div>
+          </div> */}
           <div className="rounded-md border">
             <Table>
               <TableHeader>

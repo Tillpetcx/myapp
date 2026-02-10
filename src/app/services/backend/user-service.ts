@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-
+import { hash } from 'bcryptjs';
 
 export async function createUser(userData: {
   email: string;
@@ -9,9 +9,13 @@ export async function createUser(userData: {
   lastName?: string;
 }) {
   try {
+    // 对密码进行哈希处理
+    const hashedPassword = await hash(userData.password, 10);
+    
     const user = await prisma.user.create({
       data: {
         ...userData,
+        password: hashedPassword, // 使用哈希后的密码
         profiles: {
           create: {}, // 创建关联的空配置文件
         },
@@ -85,6 +89,24 @@ export async function getUserByEmail(email: string) {
     return user;
   } catch (error) {
     console.error('Error fetching user by email:', error);
+    throw error;
+  }
+}
+
+export async function getUserByUsername(username: string) {
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        username,
+        isDeleted: false, // 只获取未删除的用户
+      },
+      include: {
+        profiles: true,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error('Error fetching user by username:', error);
     throw error;
   }
 }
