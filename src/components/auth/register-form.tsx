@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { userService } from "@/app/services/frontend/userService";
+import { userService } from "@/app/(Home)/userService";
 import { ApiError } from "@/lib/fetchwrapper";
 import { Button } from "@/components/ui/button";
 import { InputField } from "@/components/ui/form-fields";

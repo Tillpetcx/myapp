@@ -12,7 +12,7 @@ import {
   ColumnFiltersState,
   RowSelectionState,
 } from "@tanstack/react-table";
-import { userService, type User } from "@/app/services/frontend/userService";
+import { userService, type User } from "@/app/(Home)/userService";
 import { ApiError } from "@/lib/fetchwrapper";
 import { UserFilters } from "@/components/user-filters";
 import { Button } from "@/components/ui/button";

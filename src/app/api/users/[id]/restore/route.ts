@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { restoreUser } from '@/app/services/backend/user-service';
+import { restoreUser } from '@/app/api/users/user-service';
 
 // 恢复已删除的用户
 export async function POST(

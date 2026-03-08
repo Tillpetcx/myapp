@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDeletedUsers } from '@/app/services/backend/user-service';
+import { getDeletedUsers } from '@/app/api/users/user-service';
 
 // 获取已删除的用户列表
 export async function GET(request: NextRequest) {

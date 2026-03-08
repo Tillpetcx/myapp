@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById, updateUser, deleteUser } from '@/app/services/backend/user-service';
+import { getUserById, updateUser, deleteUser } from '@/app/api/users/user-service';
 
 // 获取特定用户
 export async function GET(

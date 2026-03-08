@@ -10,6 +10,7 @@ export function Navigation() {
   const navItems = [
     { href: "/", label: "首页" },
     { href: "/users", label: "用户管理" },
+    { href: "/aichat", label: "AI聊天" },
   ];
 
   return (

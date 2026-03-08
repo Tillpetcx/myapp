@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getAllUsers, getUserByEmail, getUserByUsername } from '@/app/services/backend/user-service';
+import { createUser, getAllUsers, getUserByEmail, getUserByUsername } from '@/app/api/users/user-service';
 
 // 获取所有用户或根据邮箱/用户名查询用户
 export async function GET(request: NextRequest) {

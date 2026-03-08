@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { permanentlyDeleteUser } from '@/app/services/backend/user-service';
+import { permanentlyDeleteUser } from '@/app/api/users/user-service';
 
 // 永久删除用户（物理删除，仅管理员可用）
 export async function DELETE(
