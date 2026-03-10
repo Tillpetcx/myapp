@@ -6,67 +6,130 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "@/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id         String    @id @default(cuid())
-  email      String    @unique
-  username   String?   @unique
-  password   String
-  firstName  String?
-  lastName   String?
-  avatar     String?
-  bio        String?
-  phone      String?
-  isActive   Boolean   @default(true)
-  isVerified Boolean   @default(false)
-  role       UserRole  @default(USER)
-  isDeleted  Boolean   @default(false)
-  deletedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  posts      Post[]
-  profiles   Profile[]
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
 
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+  GITHUB
+  APPLE
+  DISCORD
+  WECHAT // 示例：常见的中国用户场景
+  // 按项目需求扩展
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+
+  // 核心标识（至少一个唯一）
+  email           String    @unique @db.VarChar(255)
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  username        String?   @unique @db.VarChar(50) // 可选，部分系统禁用
+  displayName     String?   @map("display_name") @db.VarChar(120) // 展示优先级最高
+
+  // 认证相关
+  passwordHash    String?  @map("password_hash") @db.VarChar(255) // 只对 credentials 用户存在
+  twoFactorSecret String?  @map("two_factor_secret") @db.Text // base32 TOTP secret
+  twoFactorBackup String[] @map("two_factor_backup_codes") // 加密后的备份码数组
+
+  // 个人资料（轻量）
+  firstName String? @map("first_name") @db.VarChar(80)
+  lastName  String? @map("last_name") @db.VarChar(80)
+  avatarUrl String? @map("avatar_url") @db.Text
+  bio       String? @db.Text
+  locale    String? @default("en") @db.VarChar(10) // zh-CN, en-US 等
+  timezone  String? @default("UTC") @db.VarChar(50) // Asia/Shanghai 等
+
+  // 权限与状态
+  role        UserRole  @default(USER)
+  isActive    Boolean   @default(true) @map("is_active")
+  isBanned    Boolean   @default(false) @map("is_banned")
+  bannedUntil DateTime? @map("banned_until") @db.Timestamptz(3)
+
+  // 安全 & 审计
+  lastLoginAt          DateTime? @map("last_login_at") @db.Timestamptz(3)
+  lastLoginIp          String?   @map("last_login_ip") @db.VarChar(45)
+  lastPasswordChangeAt DateTime? @map("last_password_change_at") @db.Timestamptz(3)
+  consentedAt          DateTime? @map("privacy_consent_at") @db.Timestamptz(3) // GDPR/隐私同意时间
+
+  // 多租户支持（可选，根据项目需要启用）
+  // tenantId       String?        @db.Uuid
+  // tenant          Tenant?        @relation(fields: [tenantId], references: [id])
+
+  // 时间戳
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3) // 软删除
+
+  // 关联（推荐与主流 auth 库风格一致）
+  accounts Account[]
+  sessions Session[]
+
+  // 业务扩展示例（按需取消注释）
+  // profile           UserProfile?   @relation("UserProfile")
+  // preferences       Json?                             // { theme: "dark", notifications: {...} }
+  // onboardingStep    Int?           @default(0)        // 新手引导进度
+  // @@fulltext([displayName, username])  // 如开启 previewFeatures 可用于搜索
+
+  // 索引优化（覆盖 90%+ 常见查询）
+  @@index([email])
+  @@index([username])
+  @@index([role, isActive]) // 按角色筛选活跃用户
+  @@index([deletedAt]) // 软删除过滤
+  @@index([lastLoginAt(sort: Desc)]) // 最近活跃排序
   @@map("users")
 }
 
-model Profile {
-  id        String    @id @default(cuid())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  website   String?
-  location  String?
-  birthDate DateTime?
+// ──────────────────────────────────────────────
+// 配套模型（保持与 Better Auth / Auth.js 高度兼容）
+model Account {
+  id                String       @id @default(uuid()) @db.Uuid
+  userId            String       @db.Uuid
+  provider          AuthProvider
+  providerAccountId String
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // OAuth 标准字段
+  refreshToken String? @map("refresh_token") @db.Text
+  accessToken  String? @map("access_token") @db.Text
+  expiresAt    Int?    @map("expires_at")
+  tokenType    String? @map("token_type") @db.VarChar(50)
+  scope        String? @db.Text
+  idToken      String? @map("id_token") @db.Text
+  sessionState String? @map("session_state") @db.VarChar(100)
 
-  @@map("profiles")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
 }
 
-model Post {
-  id        String  @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  authorId  String
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  sessionToken String   @unique @map("session_token") @db.VarChar(255)
+  userId       String   @db.Uuid
+  expires      DateTime @db.Timestamptz(3)
 
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("posts")
+  @@map("sessions")
 }
 
-enum UserRole {
-  USER
-  ADMIN
-  MODERATOR
+model VerificationToken {
+  identifier String
+  token      String   @unique @db.VarChar(255)
+  expires    DateTime @db.Timestamptz(3)
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }

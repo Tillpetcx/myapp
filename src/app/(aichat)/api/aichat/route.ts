@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chatStream } from '@/lib/services/chat-service';
+import { chatStream } from '@/services/chat/chat-service';
 import { createStreamingDataResponse } from '@/lib/utils/streaming';
 
 // 创建聊天会话
