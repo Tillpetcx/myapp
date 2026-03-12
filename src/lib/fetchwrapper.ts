@@ -1,313 +1,120 @@
-/**
- * API 响应的基础接口
- */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  status: number;
-}
+// lib/api.ts
+import { toast } from 'sonner'; // 可选：使用 sonner / react-hot-toast 等提示库
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
 
 /**
- * 请求配置选项
+ * 主流的 fetch 封装工具类（类似 axios 风格）
+ * 特点：
+ * 1. 统一 baseURL（从 env 读取）
+ * 2. 自动处理 JSON 请求/响应
+ * 3. 自动携带 Authorization Bearer Token
+ * 4. 统一的错误处理 + 可选 toast
+ * 5. 支持 Next.js fetch 所有原生选项（cache、next: { revalidate, tags } 等）
+ * 6. 支持 GET/POST/PUT/PATCH/DELETE 快捷方法
  */
-export interface FetchOptions extends RequestInit {
-  timeout?: number; // 请求超时时间（毫秒）
-  retries?: number; // 重试次数
-  retryDelay?: number; // 重试延迟（毫秒）
-  baseURL?: string; // 基础URL
-  headers?: Record<string, string>; // 请求头
-  params?: Record<string, any>; // URL参数
-  data?: any; // 请求体数据
-  skipErrorHandler?: boolean; // 跳过全局错误处理
-  skipAuthHeader?: boolean; // 跳过添加认证头
-}
+class ApiClient {
+  private baseURL: string;
+  private token: string | null = null;
 
-/**
- * 错误类型
- */
-export class ApiError extends Error {
-  status: number;
-  data?: any;
-
-  constructor(message: string, status: number, data?: any) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.data = data;
+  constructor(baseURL: string = API_BASE_URL) {
+    this.baseURL = baseURL;
   }
-}
 
-/**
- * 默认配置
- */
-const DEFAULT_CONFIG: Partial<FetchOptions> = {
-  timeout: 10000, // 10秒超时
-  retries: 0, // 默认不重试
-  retryDelay: 1000, // 1秒重试延迟
-  headers: {
-    'Content-Type': 'application/json',
-  },
-};
-
-/**
- * 获取认证token（可根据实际情况修改）
- */
-const getAuthToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+  /** 设置 Token（登录后调用） */
+  setToken(token: string) {
+    this.token = token;
   }
-  return null;
-};
 
-/**
- * 添加认证头
- */
-const addAuthHeaders = (headers: Record<string, string>): Record<string, string> => {
-  const token = getAuthToken();
-  if (token) {
-    return {
-      ...headers,
-      Authorization: `Bearer ${token}`,
+  /** 清除 Token（登出时调用） */
+  clearToken() {
+    this.token = null;
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...(this.token && { Authorization: `Bearer ${this.token}` }),
+      ...options.headers,
     };
-  }
-  return headers;
-};
 
-/**
- * 处理URL参数
- */
-const buildURL = (url: string, params?: Record<string, any>): string => {
-  if (!params) return url;
-  
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      searchParams.append(key, String(value));
+    // 自动序列化 body
+    let body = options.body;
+    if (body && typeof body !== 'string' && !(body instanceof FormData)) {
+      body = JSON.stringify(body);
     }
-  });
-  
-  const queryString = searchParams.toString();
-  return queryString ? `${url}${url.includes('?') ? '&' : '?'}${queryString}` : url;
-};
 
-/**
- * 处理响应
- */
-const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
-  const status = response.status;
-  
-  // 尝试解析JSON响应
-  let data: any;
-  try {
-    data = await response.json();
-  } catch (error) {
-    // 如果不是JSON响应，使用文本内容
-    const text = await response.text();
-    data = { message: text };
-  }
-  
-  // 构造统一的响应格式
-  const result: ApiResponse<T> = {
-    success: response.ok,
-    status,
-    data: response.ok ? data : undefined,
-    message: response.ok ? (data.message || '请求成功') : undefined,
-    error: !response.ok ? (data.error || data.message || '请求失败') : undefined,
-  };
-  
-  // 如果响应不成功，抛出错误
-  if (!response.ok) {
-    throw new ApiError(result.error || '请求失败', status, data);
-  }
-  
-  return result;
-};
+    const config: RequestInit = {
+      ...options,
+      headers,
+      body,
+    };
 
-/**
- * 带超时的fetch
- */
-const fetchWithTimeout = (url: string, options: RequestInit, timeout: number): Promise<Response> => {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`请求超时 (${timeout}ms)`));
-    }, timeout);
-    
-    fetch(url, options)
-      .then(response => {
-        clearTimeout(timer);
-        resolve(response);
-      })
-      .catch(error => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
-};
+    const response = await fetch(url, config);
 
-/**
- * 带重试的fetch
- */
-const fetchWithRetry = async (
-  url: string, 
-  options: RequestInit, 
-  retries: number, 
-  retryDelay: number
-): Promise<Response> => {
-  let lastError: Error;
-  
-  for (let i = 0; i <= retries; i++) {
-    try {
-      return await fetch(url, options);
-    } catch (error) {
-      lastError = error as Error;
-      
-      // 如果是最后一次尝试，直接抛出错误
-      if (i === retries) {
-        throw lastError;
+    // 统一错误处理
+    if (!response.ok) {
+      let errorData: any = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        // 非 JSON 错误（如 500 纯文本）
+        errorData = { message: response.statusText };
       }
-      
-      // 等待一段时间后重试
-      await new Promise(resolve => setTimeout(resolve, retryDelay));
-    }
-  }
-  
-  throw lastError!;
-};
 
-/**
- * 核心请求方法
- */
-const coreRequest = async <T = any>(
-  url: string,
-  options: FetchOptions = {}
-): Promise<ApiResponse<T>> => {
-  // 合并配置
-  const config = { ...DEFAULT_CONFIG, ...options };
-  
-  // 处理基础URL
-  const baseURL = config.baseURL || '';
-  const fullUrl = baseURL ? `${baseURL}${url}` : url;
-  
-  // 处理URL参数
-  const finalUrl = buildURL(fullUrl, config.params);
-  
-  // 确保URL是有效的
-  const requestUrl = finalUrl.startsWith('/') 
-    ? (typeof window !== 'undefined' ? `${window.location.origin}${finalUrl}` : `http://localhost:3000${finalUrl}`)
-    : finalUrl;
-  
-  // 处理请求头
-  let headers = { ...DEFAULT_CONFIG.headers, ...config.headers };
-  if (!config.skipAuthHeader) {
-    headers = addAuthHeaders(headers);
-  }
-  
-  // 处理请求体
-  let body: string | undefined;
-  if (config.data) {
-    if (typeof config.data === 'string') {
-      body = config.data;
-    } else {
-      body = JSON.stringify(config.data);
-    }
-  }
-  
-  // 构造最终请求选项
-  const requestOptions: RequestInit = {
-    method: config.method || 'GET',
-    headers,
-    body,
-    ...config,
-  };
-  
-  try {
-    // 发送请求
-    let response: Response;
-    
-    if (config.timeout && config.timeout > 0) {
-      // 带超时的请求
-      if (config.retries && config.retries > 0) {
-        // 带超时和重试的请求
-        response = await fetchWithRetry(requestUrl, requestOptions, config.retries, config.retryDelay!);
-      } else {
-        // 仅带超时的请求
-        response = await fetchWithTimeout(requestUrl, requestOptions, config.timeout);
+      const errorMessage =
+        errorData.message ||
+        errorData.error ||
+        `请求失败: ${response.status} ${response.statusText}`;
+
+      // 可选：全局 toast 提示
+      if (typeof window !== 'undefined') {
+        toast.error(errorMessage);
       }
-    } else {
-      // 普通请求
-      response = await fetch(requestUrl, requestOptions);
-    }
-    
-    // 处理响应
-    return await handleResponse<T>(response);
-  } catch (error) {
-    // 处理错误
-    if (error instanceof ApiError) {
+
+      // 抛出自定义错误，便于上层 catch
+      const error = new Error(errorMessage);
+      error.name = 'ApiError';
+      (error as any).status = response.status;
+      (error as any).data = errorData;
       throw error;
     }
-    
-    // 网络错误或其他错误
-    throw new ApiError(
-      error instanceof Error ? error.message : '未知错误',
-      0,
-      error
-    );
+
+    // 支持返回空响应（如 204 No Content）
+    if (response.status === 204) return {} as T;
+
+    return response.json() as Promise<T>;
   }
-};
 
-/**
- * 封装的fetch方法
- */
-export const fetchWrapper = {
-  /**
-   * GET请求
-   */
-  get: <T = any>(url: string, options: FetchOptions = {}) => 
-    coreRequest<T>(url, { ...options, method: 'GET' }),
-  
-  /**
-   * POST请求
-   */
-  post: <T = any>(url: string, data?: any, options: FetchOptions = {}) => 
-    coreRequest<T>(url, { ...options, method: 'POST', data }),
-  
-  /**
-   * PUT请求
-   */
-  put: <T = any>(url: string, data?: any, options: FetchOptions = {}) => 
-    coreRequest<T>(url, { ...options, method: 'PUT', data }),
-  
-  /**
-   * PATCH请求
-   */
-  patch: <T = any>(url: string, data?: any, options: FetchOptions = {}) => 
-    coreRequest<T>(url, { ...options, method: 'PATCH', data }),
-  
-  /**
-   * DELETE请求
-   */
-  delete: <T = any>(url: string, options: FetchOptions = {}) => 
-    coreRequest<T>(url, { ...options, method: 'DELETE' }),
-  
-  /**
-   * 自定义请求
-   */
-  request: coreRequest,
-};
+  // ==================== 快捷方法 ====================
+  get<T>(endpoint: string, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
+  }
 
-/**
- * 设置默认配置
- */
-export const setDefaultConfig = (config: Partial<FetchOptions>) => {
-  Object.assign(DEFAULT_CONFIG, config);
-};
+  post<T>(endpoint: string, body?: any, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'POST', body });
+  }
 
-/**
- * 设置认证token获取方法
- */
-export const setAuthTokenGetter = (getter: () => string | null) => {
-  // 这个函数可以根据需要实现
-};
+  put<T>(endpoint: string, body?: any, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'PUT', body });
+  }
+
+  patch<T>(endpoint: string, body?: any, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
+  }
+
+  delete<T>(endpoint: string, options?: RequestInit) {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+  }
+}
+
+// ==================== 导出实例 ====================
+export const api = new ApiClient();
+
+// 如果你需要多个不同 baseURL 的实例，也可以导出类本身
+export { ApiClient };

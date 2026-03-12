@@ -1,0 +1,9 @@
+帮我使用nextauth已经根据我目前db的user表实现用户的登录注册功能。
+要求
+1，页面ui统一使用src\components\ui下的shadcn组件
+2，使用rhf+zod进行校验，使用shadcn官方推荐的field进行布局
+3，统一写在src\app\(auth)目录下，api写在src\app\(auth)\api目录下
+4，请求统一使用src\lib\fetchwrapper.ts里封装的方式，
+5，页面请求需要封装成函数，写在对应页面的*fetch目录下
+6，如果页面需要封装其他组件或函数，统一写在对于页面的*开头目录下
+帮我实现。
