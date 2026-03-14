@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -35,8 +34,8 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  // const searchParams = useSearchParams();
+  // const callbackUrl = searchParams.get("callbackUrl") || "/";
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -57,7 +56,7 @@ export default function LoginPage() {
     try {
       await login(data);
       toast.success("登录成功");
-      router.push(callbackUrl);
+      // router.push(callbackUrl);
       router.refresh();
     } catch (error: unknown) {
       let errorMessage = "登录失败，请检查邮箱和密码";

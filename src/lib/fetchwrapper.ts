@@ -1,7 +1,8 @@
 // lib/api.ts
 import { toast } from 'sonner'; // 可选：使用 sonner / react-hot-toast 等提示库
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
+// const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = '';
 
 /**
  * 主流的 fetch 封装工具类（类似 axios 风格）

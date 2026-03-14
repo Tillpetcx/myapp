@@ -15,5 +15,5 @@ export interface RegisterResponse {
 }
 
 export async function registerUser(data: RegisterRequest): Promise<RegisterResponse> {
-    return api.post<RegisterResponse>("/register", data);
+    return api.post<RegisterResponse>("/api/register", data);
 }
