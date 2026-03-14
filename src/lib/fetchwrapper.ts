@@ -59,6 +59,7 @@ class ApiClient {
 
     // 统一错误处理
     if (!response.ok) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let errorData: any = {};
       try {
         errorData = await response.json();
@@ -80,7 +81,9 @@ class ApiClient {
       // 抛出自定义错误，便于上层 catch
       const error = new Error(errorMessage);
       error.name = 'ApiError';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (error as any).status = response.status;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (error as any).data = errorData;
       throw error;
     }
@@ -95,15 +98,16 @@ class ApiClient {
   get<T>(endpoint: string, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   post<T>(endpoint: string, body?: any, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'POST', body });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   put<T>(endpoint: string, body?: any, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'PUT', body });
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   patch<T>(endpoint: string, body?: any, options?: RequestInit) {
     return this.request<T>(endpoint, { ...options, method: 'PATCH', body });
   }

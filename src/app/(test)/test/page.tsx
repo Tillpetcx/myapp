@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send } from "lucide-react";
 
 import NormalPage from "./page-normal";
 import TransitionPage from "./page-transition";
