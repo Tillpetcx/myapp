@@ -7,7 +7,7 @@
     "build": "next build",
     "build:prod":"next build",
     "build:staging":"next build",
-    "build:preview":"next build",
+    "build:dev":"next build",
     "start": "next start",
     "lint": "eslint"
   },
