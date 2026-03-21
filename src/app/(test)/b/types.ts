@@ -9,7 +9,3 @@ export interface Post {
     title: string;
     content: string;
 }
-export type CombinedData = {
-    users: User[];
-    posts: Post[];
-};

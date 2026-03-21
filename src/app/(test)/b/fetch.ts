@@ -1,5 +1,5 @@
-import { CombinedData } from "./types";
-export async function fetchData(): Promise<CombinedData> {
+import { User, Post } from "./types";
+export async function fetchData(): Promise<{ users: User[]; posts: Post[] }> {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
     const response = await fetch(`${baseUrl}/api/data`, {
