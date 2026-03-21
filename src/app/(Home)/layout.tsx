@@ -1,3 +1,5 @@
+import { Navigation } from "./_components/navi";
+
 export default function HomeLayout({
   children,
 }: Readonly<{
@@ -5,7 +7,8 @@ export default function HomeLayout({
 }>) {
   return (
     <>
-      <main className="min-h-screen">{children}</main>
+      <Navigation />
+      <div className="min-h-screen">{children}</div>
     </>
   );
 }
