@@ -1,0 +1,1 @@
+写代码前看src\lib和src\components目录下的文件，看是否有可以使用的工具类和ui组件
