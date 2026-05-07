@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
-    env: {
+  output: "standalone",
+  env: {
     DATABASE_URL: process.env.DATABASE_URL,
   },
 };
