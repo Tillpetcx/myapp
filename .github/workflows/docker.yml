@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - dev
-      - feature
+      - "feature/**"
 
 jobs:
   docker:
@@ -26,21 +26,31 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract repository and branch name
-        id: vars
+      - name: Convert repository name to lowercase
         run: |
-          # 将仓库名称转为小写
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "REPO_LOWER=${REPO_LOWER}" >> $GITHUB_ENV
+          echo "IMAGE_NAME=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-          # 记录分支名称
-          echo "BRANCH_NAME=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
 
-      - name: Build and Push
+          tags: |
+            # branch tag
+            type=ref,event=branch
+
+            # short sha tag
+            type=sha,format=short
+
+            # latest only for main
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ env.REPO_LOWER }}:${{ env.BRANCH_NAME }}
-            ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
+
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
