@@ -10,7 +10,7 @@ RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
-RUN corepack enable pnpm && corepack prepare pnpm@latest --activate
+RUN corepack enable pnpm && pnpm install --frozen-lockfile --only-built-dependencies
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
