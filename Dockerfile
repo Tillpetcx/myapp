@@ -6,11 +6,11 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY pnpm-lock.yaml ./pnpm-lock.yaml
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN corepack enable pnpm && pnpm install --frozen-lockfile --only-built-dependencies
 
 FROM base AS builder
 WORKDIR /app
-RUN corepack enable pnpm && pnpm install --frozen-lockfile --only-built-dependencies
+RUN corepack enable pnpm && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
