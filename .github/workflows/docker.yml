@@ -26,9 +26,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract branch name
+      - name: Extract repository and branch name
         id: vars
-        run: echo "BRANCH_NAME=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+        run: |
+          # 将仓库名称转为小写
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "REPO_LOWER=${REPO_LOWER}" >> $GITHUB_ENV
+
+          # 记录分支名称
+          echo "BRANCH_NAME=${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
       - name: Build and Push
         uses: docker/build-push-action@v5
@@ -36,5 +42,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ env.BRANCH_NAME }}
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ env.REPO_LOWER }}:${{ env.BRANCH_NAME }}
+            ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
