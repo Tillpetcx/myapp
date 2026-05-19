@@ -6,9 +6,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY pnpm-lock.yaml ./pnpm-lock.yaml
-RUN corepack enable pnpm \
- && pnpm config set only-built-dependencies "*" \
- && pnpm install --frozen-lockfile
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
