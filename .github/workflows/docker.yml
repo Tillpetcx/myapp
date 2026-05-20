@@ -7,6 +7,9 @@ on:
       - dev
       - "feature/**"
 
+    tags:
+      - "v*"
+
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -45,6 +48,10 @@ jobs:
 
             # latest only for main
             type=raw,value=latest,enable={{is_default_branch}}
+
+            # semantic version
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
